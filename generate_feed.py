@@ -1,33 +1,75 @@
 from scholarly import scholarly
 from feedgen.feed import FeedGenerator
 
+# Google Scholar ID
 SCHOLAR_ID = "TKbYqt0AAAAJ"
 
-print("Fetching author...")
+print("Fetching author profile...")
 
 author = scholarly.search_author_id(SCHOLAR_ID)
 
+author = scholarly.fill(
+    author,
+    sections=["publications"]
+)
+
+print(f"Author: {author['name']}")
+print(f"Publications found: {len(author['publications'])}")
+
 fg = FeedGenerator()
 
-fg.title(f"Publications - {author.get('name','Scholar Author')}")
-fg.link(href=f"https://scholar.google.com/citations?user={SCHOLAR_ID}")
-fg.description("Latest Google Scholar Publications")
+fg.title(
+    f"Google Scholar Publications - {author['name']}"
+)
 
-publications = author.get("publications", [])
+fg.link(
+    href=f"https://scholar.google.com/citations?user={SCHOLAR_ID}"
+)
 
-for pub in publications[:20]:
+fg.description(
+    "Latest publications from Google Scholar"
+)
 
-    bib = pub.get("bib", {})
+for pub in author["publications"][:20]:
 
-    title = bib.get("title", "Untitled")
-    year = bib.get("pub_year", "")
+    try:
 
-    entry = fg.add_entry()
+        pub = scholarly.fill(pub)
 
-    entry.title(title)
-    entry.description(f"{title} ({year})")
-    entry.guid(title)
+        bib = pub.get("bib", {})
+
+        title = bib.get(
+            "title",
+            "Untitled"
+        )
+
+        year = bib.get(
+            "pub_year",
+            ""
+        )
+
+        entry = fg.add_entry()
+
+        entry.title(title)
+
+        entry.link(
+            href=f"https://scholar.google.com/citations?user={SCHOLAR_ID}"
+        )
+
+        entry.description(
+            f"{title} ({year})"
+        )
+
+        entry.guid(title)
+
+        print(title)
+
+    except Exception as e:
+
+        print(
+            f"Failed: {e}"
+        )
 
 fg.rss_file("feed.xml")
 
-print("RSS feed generated")
+print("RSS generated successfully")
