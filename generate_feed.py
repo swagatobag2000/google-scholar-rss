@@ -3,37 +3,31 @@ from feedgen.feed import FeedGenerator
 
 SCHOLAR_ID = "TKbYqt0AAAAJ"
 
+print("Fetching author...")
+
 author = scholarly.search_author_id(SCHOLAR_ID)
-author = scholarly.fill(author, sections=['publications'])
 
 fg = FeedGenerator()
 
-fg.title(f"Google Scholar Publications - {author['name']}")
-fg.link(href=author['url_picture'] if 'url_picture' in author else '')
-fg.description("Latest publications from Google Scholar")
+fg.title(f"Publications - {author.get('name','Scholar Author')}")
+fg.link(href=f"https://scholar.google.com/citations?user={SCHOLAR_ID}")
+fg.description("Latest Google Scholar Publications")
 
-publications = author['publications']
+publications = author.get("publications", [])
 
 for pub in publications[:20]:
 
-    try:
-        pub = scholarly.fill(pub)
+    bib = pub.get("bib", {})
 
-        title = pub['bib'].get('title', 'Untitled')
-        year = str(pub['bib'].get('pub_year', ''))
+    title = bib.get("title", "Untitled")
+    year = bib.get("pub_year", "")
 
-        entry = fg.add_entry()
+    entry = fg.add_entry()
 
-        entry.title(title)
+    entry.title(title)
+    entry.description(f"{title} ({year})")
+    entry.guid(title)
 
-        entry.description(
-            f"{title} ({year})"
-        )
+fg.rss_file("feed.xml")
 
-        entry.guid(title)
-
-    except Exception as e:
-        print(e)
-
-fg.rss_file('feed.xml')
 print("RSS feed generated")
